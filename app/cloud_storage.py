@@ -3,11 +3,13 @@ import os
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 
+from app.configs import (
+    YANDEX_CLOUD_ACCESS_KEY,
+    YANDEX_CLOUD_SECRET_KEY,
+    YANDEX_CLOUD_BUCKET_NAME,
+    YANDEX_CLOUD_ENDPOINT_URL,
+)
 
-YANDEX_CLOUD_ACCESS_KEY = os.getenv("YANDEX_CLOUD_ACCESS_KEY")
-YANDEX_CLOUD_SECRET_KEY = os.getenv("YANDEX_CLOUD_SECRET_KEY")
-YANDEX_CLOUD_BUCKET_NAME = os.getenv("YANDEX_CLOUD_BUCKET_NAME")
-YANDEX_CLOUD_ENDPOINT_URL = os.getenv("YANDEX_CLOUD_ENDPOINT_URL", "https://storage.yandexcloud.net")
 
 s3_client = boto3.client(
     "s3",

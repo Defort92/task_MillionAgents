@@ -2,7 +2,7 @@ import os
 import shutil
 from uuid import uuid4
 
-LOCAL_STORAGE_PATH = "storage/"
+from app.configs import LOCAL_STORAGE_PATH
 
 
 def generate_uid():

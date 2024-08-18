@@ -7,14 +7,13 @@ from app.database import get_db
 from app.models import FileMetadata as FileModel
 from app.utils import save_file_locally, generate_uid
 from app.cloud_storage import delete_file_from_cloud, upload_to_cloud_and_update_db
+from app.configs import LOCAL_STORAGE_PATH, logger
 
 
 router = APIRouter(
     prefix="/files",
     tags=["files"]
 )
-
-LOCAL_STORAGE_PATH = "storage/"
 
 
 @router.post("/upload")
