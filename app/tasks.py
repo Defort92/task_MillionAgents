@@ -16,7 +16,7 @@ def clean_unused_files() -> None:
     Удаляет неиспользуемые файлы из локального хранилища, которые отсутствуют в базе данных.
 
     Функция перебирает все файлы в локальном хранилище и удаляет те, которые
-    не имеют соответствующей записи в базе данных.
+    не имеют соответствующей записи в базе данных. Аналогично с файлами на Yandex Cloud Storage
 
     :return: None
     :rtype: None
@@ -27,6 +27,9 @@ def clean_unused_files() -> None:
     try:
         files_in_db = db.query(FileModel).all()
         files_in_db_paths = {file_record.path for file_record in files_in_db}
+        files_in_db_cloud = {
+            os.path.basename(file_record.path) for file_record in files_in_db if file_record.storage_url
+        }
 
         for root, dirs, files in os.walk(LOCAL_STORAGE_PATH):
             for filename in files:
@@ -36,6 +39,17 @@ def clean_unused_files() -> None:
                     logger.info(f"Deleting unused file: {file_path}")
 
                     os.remove(file_path)
+
+        # Проверяем файлы в облаке Yandex Cloud
+        files_in_cloud = list_files_in_cloud()
+        for file_name in files_in_cloud:
+            if file_name not in files_in_db_cloud:
+                logging.info(f"Deleting unused file from Yandex Cloud: {file_name}")
+                try:
+                    delete_file_from_cloud(file_name)
+                    logging.info(f"Deleted {file_name} from Yandex Cloud")
+                except Exception as e:
+                    logging.error(f"Failed to delete {file_name} from Yandex Cloud: {e}")
 
         logger.info("Cleanup completed successfully.")
     except Exception as e:
