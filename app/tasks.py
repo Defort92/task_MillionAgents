@@ -11,7 +11,16 @@ from app.cloud_storage import delete_file_from_cloud
 from app.configs import LOCAL_STORAGE_PATH, logger
 
 
-def clean_unused_files():
+def clean_unused_files() -> None:
+    """
+    Удаляет неиспользуемые файлы из локального хранилища, которые отсутствуют в базе данных.
+
+    Функция перебирает все файлы в локальном хранилище и удаляет те, которые
+    не имеют соответствующей записи в базе данных.
+
+    :return: None
+    :rtype: None
+    """
     logger.info("Starting cleanup of unused files...")
     db: Session = next(get_db())
 
@@ -35,7 +44,15 @@ def clean_unused_files():
         db.close()
 
 
-def start_scheduler():
+def start_scheduler() -> None:
+    """
+    Запускает планировщик задач для регулярной очистки неиспользуемых файлов.
+
+    Планировщик настроен на выполнение задачи по очистке файлов каждый день в 01:00.
+
+    :return: None
+    :rtype: None
+    """
     scheduler = BackgroundScheduler()
     trigger = CronTrigger(hour=1, minute=0)
     scheduler.add_job(clean_unused_files, trigger)

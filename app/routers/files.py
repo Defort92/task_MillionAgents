@@ -17,7 +17,26 @@ router = APIRouter(
 
 
 @router.post("/upload")
-async def upload_file(file: UploadFile, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def upload_file(
+    file: UploadFile,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    Загружает файл на сервер и сохраняет его метаданные в базе данных.
+
+    Файл сначала сохраняется локально, после чего его загрузка в облачное хранилище
+    происходит в фоновом режиме. Метаданные файла сохраняются в базе данных.
+
+    :param file: Загружаемый файл.
+    :type file: UploadFile
+    :param background_tasks: Фоновые задачи FastAPI для выполнения асинхронных операций.
+    :type background_tasks: BackgroundTasks
+    :param db: Сессия базы данных.
+    :type db: Session
+    :return: Метаданные загруженного файла.
+    :rtype: dict
+    """
     uid = generate_uid()
 
     local_file_path = save_file_locally(file, uid)
@@ -45,7 +64,20 @@ async def upload_file(file: UploadFile, background_tasks: BackgroundTasks, db: S
 
 
 @router.get("/{uid}")
-async def get_file(uid: str, db: Session = Depends(get_db)):
+async def get_file(uid: str, db: Session = Depends(get_db)) -> dict:
+    """
+    Возвращает информацию о файле по его уникальному идентификатору (UID).
+
+    Проверяет наличие файла в базе данных и на локальном диске.
+
+    :param uid: Уникальный идентификатор файла.
+    :type uid: str
+    :param db: Сессия базы данных.
+    :type db: Session
+    :return: Сообщение о наличии файла.
+    :rtype: dict
+    :raises HTTPException: Если файл не найден в базе данных или на диске.
+    """
     file_record = db.query(FileModel).filter(FileModel.uid == uid).first()
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")
@@ -58,7 +90,18 @@ async def get_file(uid: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{uid}")
-async def delete_file(uid: str, db: Session = Depends(get_db)):
+async def delete_file(uid: str, db: Session = Depends(get_db)) -> dict:
+    """
+    Удаляет файл с локального диска и из базы данных, а также из облачного хранилища (если он был загружен).
+
+    :param uid: Уникальный идентификатор файла.
+    :type uid: str
+    :param db: Сессия базы данных.
+    :type db: Session
+    :return: Сообщение об успешном удалении файла.
+    :rtype: dict
+    :raises HTTPException: Если файл не найден в базе данных.
+    """
     file_record = db.query(FileModel).filter(FileModel.uid == uid).first()
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")

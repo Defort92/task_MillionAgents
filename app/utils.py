@@ -2,14 +2,32 @@ import os
 import shutil
 from uuid import uuid4
 
+from fastapi import UploadFile
+
 from app.configs import LOCAL_STORAGE_PATH
 
 
-def generate_uid():
+def generate_uid() -> str:
+    """
+    Генерирует уникальный идентификатор (UUID) в виде строки.
+
+    :return: Уникальный идентификатор.
+    :rtype: str
+    """
     return str(uuid4())
 
 
-def save_file_locally(file, uid):
+def save_file_locally(file: UploadFile, uid: str) -> str:
+    """
+    Сохраняет файл локально в указанной директории с уникальным именем.
+
+    :param file: Загружаемый файл.
+    :type file: UploadFile
+    :param uid: Уникальный идентификатор для файла.
+    :type uid: str
+    :return: Путь до сохраненного файла.
+    :rtype: str
+    """
     if not os.path.exists(LOCAL_STORAGE_PATH):
         os.makedirs(LOCAL_STORAGE_PATH)
 
