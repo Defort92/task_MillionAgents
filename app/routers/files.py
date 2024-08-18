@@ -1,11 +1,13 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
-from sqlalchemy.orm import Session
 import os
-import shutil
-from uuid import uuid4
+
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, BackgroundTasks
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models import FileMetadata as FileModel
 from app.utils import save_file_locally, generate_uid
+from app.cloud_storage import delete_file_from_cloud, upload_to_cloud_and_update_db
+
 
 router = APIRouter(
     prefix="/files",
@@ -14,8 +16,9 @@ router = APIRouter(
 
 LOCAL_STORAGE_PATH = "storage/"
 
+
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_file(file: UploadFile, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     uid = generate_uid()
 
     local_file_path = save_file_locally(file, uid)
@@ -31,6 +34,8 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     db.add(file_record)
     db.commit()
     db.refresh(file_record)
+
+    background_tasks.add_task(upload_to_cloud_and_update_db, local_file_path, file_record, db)
 
     return {
         "uid": uid,
@@ -59,9 +64,11 @@ async def delete_file(uid: str, db: Session = Depends(get_db)):
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")
 
-    file_path = os.path.join(LOCAL_STORAGE_PATH, f"{uid}_{file_record.original_name}")
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    if os.path.exists(file_record.path):
+        os.remove(file_record.path)
+
+    if file_record.storage_url:
+        delete_file_from_cloud(os.path.basename(file_record.path))
 
     db.delete(file_record)
     db.commit()
